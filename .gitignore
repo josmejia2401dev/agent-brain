@@ -1,0 +1,19 @@
+# Dependencias de Node.js
+node_modules/
+
+# Logs de error y empaquetadores
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
+
+# Datos del agente y caché de modelos (para no subir tu conocimiento privado o modelos pesados a Git)
+.agent_data/
+
+# Variables de entorno
+.env
+.env.local
