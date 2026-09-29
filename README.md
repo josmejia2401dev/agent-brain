@@ -1,4 +1,4 @@
-# 🧠 DevLore — Your Local Developer Knowledge Base
+# 🧠 AgentBrian — Your Local Developer Knowledge Base
 
 **AgentBrian** es un "Segundo Cerebro" e instrumento de gestión del conocimiento diseñado para desarrolladores de software. Funciona 100% de manera local en Node.js mediante una interfaz interactiva de terminal (CLI), permitiéndote registrar, buscar y reutilizar fragmentos de código, errores solucionados, soluciones de infraestructura, prompts de LLM y decisiones de arquitectura (ADR) aplicando principios como *Clean Code, KISS, DRY y YAGNI*.
 
@@ -56,7 +56,7 @@ Toda la información del sistema se guarda aislada en el directorio `.agent_data
 1. Clona este repositorio o copia los archivos del proyecto:
 ```bash
 git clone [https://github.com/josmejia2401dev/agent-brian.git](https://github.com/josmejia2401dev/agent-brian.git)
-cd devlore
+cd AgentBrian
 
 ```
 
