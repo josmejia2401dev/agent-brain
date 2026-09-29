@@ -1,7 +1,14 @@
 import path from 'node:path';
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
-const DATA_DIR = '.agent_data';
+// Obtener la ruta absoluta del archivo actual (src/config.js)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Subir un nivel desde 'src/' hacia la raíz de tu proyecto
+const PROJECT_ROOT = path.resolve(__dirname, '..');
+const DATA_DIR = path.join(PROJECT_ROOT, '.agent_data');
 
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });

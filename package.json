@@ -6,6 +6,9 @@
   "scripts": {
     "start": "node index.js"
   },
+  "bin": {
+    "agent-brain": "./index.js"
+  },
   "dependencies": {
     "@inquirer/prompts": "^7.0.0",
     "@lancedb/lancedb": "^0.17.0",

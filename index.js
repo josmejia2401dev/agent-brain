@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { CONFIG } from './src/config.js';
 import { DatabaseManager } from './src/Database.js';
 import { EmbeddingsService } from './src/Embeddings.js';

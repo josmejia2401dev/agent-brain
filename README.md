@@ -1,6 +1,6 @@
-# 🧠 AgentBrian — Your Local Developer Knowledge Base
+# 🧠 agent-brain — Your Local Developer Knowledge Base
 
-**AgentBrian** es un "Segundo Cerebro" e instrumento de gestión del conocimiento diseñado para desarrolladores de software. Funciona 100% de manera local en Node.js mediante una interfaz interactiva de terminal (CLI), permitiéndote registrar, buscar y reutilizar fragmentos de código, errores solucionados, soluciones de infraestructura, prompts de LLM y decisiones de arquitectura (ADR) aplicando principios como *Clean Code, KISS, DRY y YAGNI*.
+**agent-brain** es un "Segundo Cerebro" e instrumento de gestión del conocimiento diseñado para desarrolladores de software. Funciona 100% de manera local en Node.js mediante una interfaz interactiva de terminal (CLI), permitiéndote registrar, buscar, actualizar y eliminar fragmentos de código, errores solucionados, configuraciones de infraestructura, prompts de LLM y decisiones de arquitectura (ADR) aplicando principios como *Clean Code, KISS, DRY y YAGNI*.
 
 ---
 
@@ -8,11 +8,12 @@
 
 * **Búsqueda Híbrida Inteligente (RAG + Relacional):**
   * **Búsqueda Vectorial:** Utiliza embeddings locales para encontrar respuestas por similitud semántica.
-  * **Filtro de Umbral de Distancia:** Evita devolver resultados irrelevantes o no relacionados.
+  * **Filtro de Umbral de Distancia (1.15):** Evita devolver resultados irrelevantes o no relacionados.
 * **Procesamiento de Código con AST:** Analiza automáticamente scripts JavaScript extrayendo importaciones, exportaciones y firmas de funciones con `Acorn`.
 * **100% Local y Privado:** No requiere claves de API externas ni envío de datos a la nube. Los modelos de embeddings corren en local vía ejecuciones ONNX (`@xenova/transformers`).
 * **Cero Compiladores C++:** Aprovecha el motor nativo `node:sqlite` de Node.js 22+, garantizando instalación limpia e instantánea sin errores de `node-gyp` o Visual Studio en Windows, Linux y macOS.
-* **Gestión CRUD Completa en CLI:** Crea, actualiza y elimina notas de manera interactiva manteniendo la base relacional y la base vectorial sincronizadas de forma atómica.
+* **Gestión CRUD Completa en CLI:** Crea (`/ingest`), actualiza (`/update`) y elimina (`/delete`) notas de manera interactiva manteniendo la base relacional y la base vectorial sincronizadas de forma atómica.
+* **Acceso Global via `npm link`:** Ejecutable desde cualquier directorio de tu terminal manteniendo la persistencia centralizada en el proyecto.
 
 ---
 
@@ -31,7 +32,7 @@
 
 ## 🏗️ Arquitectura de Persistencia (`.agent_data/`)
 
-Toda la información del sistema se guarda aislada en el directorio `.agent_data/` en la raíz del proyecto:
+Toda la información del sistema se guarda aislada en el directorio `.agent_data/` en la raíz del proyecto (resuelto dinámicamente mediante `import.meta.url`):
 
 ```text
 .agent_data/
@@ -51,12 +52,12 @@ Toda la información del sistema se guarda aislada en el directorio `.agent_data
 
 * **Node.js:** Versión `22.0.0` o superior.
 
-### Pasos de Instalación
+### Pasos de Instalación y Configuración Global
 
-1. Clona este repositorio o copia los archivos del proyecto:
+1. Clona este repositorio o ubícate en la carpeta del proyecto:
 ```bash
-git clone [https://github.com/josmejia2401dev/agent-brian.git](https://github.com/josmejia2401dev/agent-brian.git)
-cd AgentBrian
+git clone [https://github.com/josmejia2401dev/agent-brain.git](https://github.com/josmejia2401dev/agent-brain.git)
+cd agent-brain
 
 ```
 
@@ -68,9 +69,9 @@ npm install
 ```
 
 
-3. Inicia la aplicación:
+3. Vincula el binario globalmente para ejecutarlo desde cualquier directorio:
 ```bash
-npm start
+npm link
 
 ```
 
@@ -82,11 +83,20 @@ npm start
 
 ## 💻 Guía de Uso
 
-Una vez iniciada la aplicación, interactúas mediante la consola del agente:
+Una vez ejecutado `npm link`, puedes abrir una nueva ventana de terminal en **cualquier carpeta de tu sistema** y lanzar la herramienta escribiendo:
+
+```bash
+agent-brain
+
+```
+
+*(O de forma local en el proyecto con `npm start`).*
+
+### Interfaz interactiva
 
 ```text
 ======================================================
-  🧠 AGENTE SEGUNDO CEREBRO - CONOCIMIENTO LOCAL (JS)
+  🧠 AGENTE SEGUNDO CEREBRO - CONOCIMIENTO LOCAL (JS) 
   Toda la información reside en: .agent_data/*
   Escribe `/help` para ver los comandos disponibles.
 ======================================================
@@ -123,27 +133,6 @@ Al registrar conocimiento mediante `/ingest`, puedes seleccionar entre las sigui
 
 ---
 
-## 📁 Estructura del Proyecto
-
-```text
-.
-├── .gitignore
-├── package.json
-├── index.js                  # Punto de entrada y arranque de servicios
-└── src/
-    ├── config.js             # Configuración centralizada de rutas y modelos
-    ├── Database.js           # Administrador SQLite nativo (node:sqlite)
-    ├── Embeddings.js         # Servicio de generación de vectores (Xenova)
-    ├── VectorStore.js        # Administrador de búsquedas en LanceDB
-    ├── CodeParser.js         # Extractor AST para JavaScript (Acorn)
-    ├── IngestService.js      # Orquestador CRUD (SQLite + LanceDB)
-    ├── SearchService.js      # Servicio de búsqueda semántica con umbral de distancia
-    └── Cli.js                # Interfaz de consola interactiva (@inquirer/prompts)
-
-```
-
----
-
 ## 📄 Licencia
 
-Este proyecto está bajo la Licencia **MIT**. Siéntete libre de modificarlo, extenderlo o adaptarlo a tus flujos de trabajo diarios.
+Este proyecto está bajo la Licencia **MIT**.
