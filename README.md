@@ -133,6 +133,38 @@ Al registrar conocimiento mediante `/ingest`, puedes seleccionar entre las sigui
 
 ---
 
+## ☁️ Respaldo y Migración (Drive)
+
+Para respaldar tu base de conocimiento sin incluir los archivos pesados del modelo de IA (`models_cache`), puedes comprimir `.agent_data` excluyendo esa subcarpeta automáticamente:
+
+### 1. Comprimir la carpeta `.agent_data` (Ignorando `models_cache`)
+
+* **Windows (PowerShell):**
+  ```powershell
+  Get-ChildItem -Path .agent_data -Recurse | Where-Object { $_.FullName -notmatch 'models_cache' } | Compress-Archive -DestinationPath agent_data_backup.zip -Force
+```
+
+* **Linux / macOS:**
+```bash
+zip -r agent_data_backup.zip .agent_data -x "*.agent_data/models_cache*"
+```
+
+---
+
+### 2. Restaurar en otro equipo
+
+1. Sube el archivo `agent_data_backup.zip` a tu Google Drive.
+2. En la nueva máquina, descarga y descomprime el archivo en la raíz del proyecto.
+3. Asegúrate de que la carpeta descomprimida se llame `.agent_data`.
+4. Ejecuta el agente:
+```bash
+agent-brain
+```
+
+*(El agente detectará que falta la carpeta `models_cache` y la descargará automáticamente en el primer arranque).*
+
+---
+
 ## 📄 Licencia
 
 Este proyecto está bajo la Licencia **MIT**.
