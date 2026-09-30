@@ -14,6 +14,7 @@ export class CliApp {
     console.log('  • `/ingest`    -> Registrar nueva nota de conocimiento');
     console.log('  • `/update`    -> Buscar y modificar una nota existente');
     console.log('  • `/delete`    -> Buscar y eliminar una nota de la BD');
+    console.log('  • `/index`     -> Re-indexa todas las notas de SQLite hacia la base vectorial (LanceDB)');
     console.log('  • `/help`      -> Mostrar esta ayuda de comandos');
     console.log('  • `/exit`      -> Salir de la aplicación (o escribe `exit`)');
     console.log('======================================================\n');
@@ -39,9 +40,9 @@ export class CliApp {
     const title = await input({ message: 'Título descriptivo:' });
     const summary = await input({ message: 'Resumen corto:' });
     const language_tech = await input({ message: 'Tecnología/Lenguaje (ej: javascript, bash, docker):', default: 'javascript' });
-    
-    const content = await editor({ 
-      message: 'Se abrirá tu editor. Pega todo el contenido, guarda (Ctrl+S) y cierra la ventana:' 
+
+    const content = await editor({
+      message: 'Se abrirá tu editor. Pega todo el contenido, guarda (Ctrl+S) y cierra la ventana:'
     });
 
     const metadata = {};
@@ -121,10 +122,10 @@ export class CliApp {
     const title = await input({ message: 'Nuevo Título:', default: selectedItem.title });
     const summary = await input({ message: 'Nuevo Resumen:', default: selectedItem.summary || '' });
     const language_tech = await input({ message: 'Tecnología/Lenguaje:', default: selectedItem.language_tech || 'markdown' });
-    
-    const content = await editor({ 
+
+    const content = await editor({
       message: 'Edita el contenido en tu editor, guarda (Ctrl+S) y cierra:',
-      default: selectedItem.content 
+      default: selectedItem.content
     });
 
     const currentTags = selectedItem.tags ? selectedItem.tags.map(t => t.name).join(', ') : '';
@@ -172,13 +173,27 @@ export class CliApp {
       console.log(`\n📄 Contenido:\n${item.content}\n`);
     });
 
-    if (result.relations?.length) {
-      console.log(`\n🔗 Relaciones encontradas en el Grafo:`);
-      result.relations.forEach(r => {
-        console.log(` - [${r.relation_type}] -> ${r.target_title} (${r.target_type})`);
-      });
-    }
     console.log(`--------------------------------------------------\n`);
+  }
+
+  async handleReindexFlow() {
+    console.log('\n🔄 Iniciando re-indexación vectorial completa desde SQLite...');
+    const startTime = Date.now();
+
+    try {
+      const result = await this.ingestService.reindexAll();
+      const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+
+      if (result.count === 0) {
+        console.log('⚠️ No hay notas en la base de datos relacional para indexar.');
+      } else {
+        console.log(`✅ ¡Re-indexación completada exitosamente!`);
+        console.log(`📊 Total de notas procesadas: ${result.count}`);
+        console.log(`⏱️ Tiempo transcurrido: ${duration}s\n`);
+      }
+    } catch (error) {
+      console.error('❌ Error durante la re-indexación:', error.message);
+    }
   }
 
   async start() {
@@ -202,6 +217,8 @@ export class CliApp {
         if (trimmed.toLowerCase() === 'exit' || trimmed.toLowerCase() === '/exit') {
           console.log('¡Hasta luego!');
           process.exit(0);
+        } else if (input === '/index') {
+          await this.handleReindexFlow();
         } else if (trimmed === '/ingest') {
           await this.runIngestFlow();
         } else if (trimmed === '/update') {
@@ -216,8 +233,8 @@ export class CliApp {
       } catch (error) {
         // Capturar cancelación forzada con Ctrl + C lanzada por @inquirer/prompts
         if (
-          error.name === 'ExitPromptError' || 
-          error.name === 'UserForceClosedError' || 
+          error.name === 'ExitPromptError' ||
+          error.name === 'UserForceClosedError' ||
           error.message?.includes('User force closed')
         ) {
           console.log('\n\n¡Hasta luego!');

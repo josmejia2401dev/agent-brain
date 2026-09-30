@@ -146,4 +146,50 @@ export class IngestService {
       item_type: data.item_type
     });
   }
+
+  async reindexAll() {
+    // 1. Obtener todas las notas activas de SQLite
+    const items = this.db.prepare(`
+    SELECT id, item_type, title, summary, content, language_tech 
+    FROM knowledge_items 
+    WHERE status = 'active'
+  `).all();
+
+    if (items.length === 0) {
+      return { count: 0 };
+    }
+
+    const vectorRecords = [];
+
+    // 2. Iterar y regenerar los vectores
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+
+      // Obtener tags vinculados
+      const tags = this.db.prepare(`
+      SELECT t.name FROM tags t
+      JOIN item_tags it ON t.id = it.tag_id
+      WHERE it.item_id = ?
+    `).all(item.id).map(t => t.name);
+
+      // Texto enriquecido para el embedding
+      const textToEmbed = `Título: ${item.title}\nTipo: ${item.item_type}\nTech: ${item.language_tech || ''}\nTags: ${tags.join(', ')}\nResumen: ${item.summary || ''}\nContenido:\n${item.content}`;
+
+      const vector = await this.embeddingsService.generateEmbedding(textToEmbed);
+
+      vectorRecords.push({
+        id: item.id,
+        vector: Array.from(vector),
+        title: item.title,
+        item_type: item.item_type,
+        language_tech: item.language_tech || '',
+        summary: item.summary || ''
+      });
+    }
+
+    // 3. Sobrescribir en LanceDB
+    await this.vectorStore.resetAndBulkInsert(vectorRecords);
+
+    return { count: items.length };
+  }
 }

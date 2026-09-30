@@ -32,17 +32,10 @@ export class SearchService {
     // Ordenar resultados respetando el orden de cercanía del vector search
     matches.sort((a, b) => (a._distance ?? 0) - (b._distance ?? 0));
 
-    const relations = this.db.prepare(`
-      SELECT r.relation_type, r.notes, k_target.id as target_id, k_target.title as target_title, k_target.item_type as target_type
-      FROM knowledge_relations r
-      JOIN knowledge_items k_target ON r.target_id = k_target.id
-      WHERE r.source_id IN (${placeholders})
-    `).all(...itemIds);
 
     return {
       found: matches.length > 0,
-      matches,
-      relations
+      matches
     };
   }
 

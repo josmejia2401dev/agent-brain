@@ -57,26 +57,9 @@ export class DatabaseManager {
           FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
       );
 
-      CREATE TABLE IF NOT EXISTS knowledge_relations (
-          source_id TEXT NOT NULL,
-          target_id TEXT NOT NULL,
-          relation_type TEXT CHECK(relation_type IN (
-              'SOLVES', 'CAUSED_BY', 'APPLIES_PRINCIPLE',
-              'VIOLATES_PRINCIPLE', 'SUPERSEDES', 'ALTERNATIVE_TO',
-              'REQUIRES', 'GENERATED_BY_PROMPT', 'RELATED_TO'
-          )) NOT NULL,
-          notes TEXT,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          PRIMARY KEY (source_id, target_id, relation_type),
-          FOREIGN KEY (source_id) REFERENCES knowledge_items(id) ON DELETE CASCADE,
-          FOREIGN KEY (target_id) REFERENCES knowledge_items(id) ON DELETE CASCADE
-      );
-
       CREATE INDEX IF NOT EXISTS idx_items_type ON knowledge_items(item_type);
       CREATE INDEX IF NOT EXISTS idx_items_status ON knowledge_items(status);
       CREATE INDEX IF NOT EXISTS idx_items_tech ON knowledge_items(language_tech);
-      CREATE INDEX IF NOT EXISTS idx_relations_source ON knowledge_relations(source_id);
-      CREATE INDEX IF NOT EXISTS idx_relations_target ON knowledge_relations(target_id);
     `);
   }
 
