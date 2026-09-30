@@ -158,18 +158,27 @@ export class CliApp {
 
     console.log(`\n🎉 Se encontraron ${result.matches.length} coincidencia(s) relevante(s):\n`);
 
+    // En src/Cli.js dentro de handleQuery(query)
+
     result.matches.forEach((item, idx) => {
-      const score = item._distance != null ? ` | Distancia Vectorial: ${item._distance.toFixed(3)}` : '';
+      const rerankScore = item._rerankScore != null
+        ? ` | Relevancia Reranker: ${(item._rerankScore * 100).toFixed(1)}%`
+        : '';
+
+      const vectorDist = item._distance != null
+        ? ` | Distancia Vectorial: ${item._distance.toFixed(3)}`
+        : '';
+
       console.log(`--------------------------------------------------`);
-      console.log(`[${idx + 1}] ${item.title.toUpperCase()} (${item.item_type})${score}`);
+      console.log(`[${idx + 1}] ${item.title.toUpperCase()} (${item.item_type})`);
+      console.log(`🔍 Motor/Origen: ${item._source}${rerankScore}${vectorDist}`);
       console.log(`📌 Resumen: ${item.summary || 'Sin resumen'}`);
       console.log(`🛠️ Tech: ${item.language_tech}`);
+
       if (item.tags?.length) {
         console.log(`🏷️ Tags: ${item.tags.map(t => t.name).join(', ')}`);
       }
-      if (item.functions?.length) {
-        console.log(`⚡ Funciones detectadas (AST): ${item.functions.join(', ')}`);
-      }
+
       console.log(`\n📄 Contenido:\n${item.content}\n`);
     });
 
