@@ -159,7 +159,7 @@ export class CliApp {
     console.log(`\n🎉 Se encontraron ${result.matches.length} coincidencia(s) relevante(s):\n`);
 
     result.matches.forEach((item, idx) => {
-      const score = item._distance !== undefined ? ` | Distancia Vectorial: ${item._distance.toFixed(3)}` : '';
+      const score = item._distance != null ? ` | Distancia Vectorial: ${item._distance.toFixed(3)}` : '';
       console.log(`--------------------------------------------------`);
       console.log(`[${idx + 1}] ${item.title.toUpperCase()} (${item.item_type})${score}`);
       console.log(`📌 Resumen: ${item.summary || 'Sin resumen'}`);
@@ -217,7 +217,7 @@ export class CliApp {
         if (trimmed.toLowerCase() === 'exit' || trimmed.toLowerCase() === '/exit') {
           console.log('¡Hasta luego!');
           process.exit(0);
-        } else if (input === '/index') {
+        } else if (trimmed === '/index') {
           await this.handleReindexFlow();
         } else if (trimmed === '/ingest') {
           await this.runIngestFlow();

@@ -147,6 +147,8 @@ export class IngestService {
     });
   }
 
+  // En src/IngestService.js
+
   async reindexAll() {
     // 1. Obtener todas las notas activas de SQLite
     const items = this.db.prepare(`
@@ -161,10 +163,11 @@ export class IngestService {
 
     const vectorRecords = [];
 
-    // 2. Iterar y regenerar los vectores
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
+    // Referencia segura al servicio de embeddings
+    const embeddingsService = this.embeddings || this.embeddingsService;
 
+    // 2. Iterar y regenerar los vectores
+    for (const item of items) {
       // Obtener tags vinculados
       const tags = this.db.prepare(`
       SELECT t.name FROM tags t
@@ -175,7 +178,8 @@ export class IngestService {
       // Texto enriquecido para el embedding
       const textToEmbed = `Título: ${item.title}\nTipo: ${item.item_type}\nTech: ${item.language_tech || ''}\nTags: ${tags.join(', ')}\nResumen: ${item.summary || ''}\nContenido:\n${item.content}`;
 
-      const vector = await this.embeddingsService.generateEmbedding(textToEmbed);
+      // 💡 Método corregido: usa .generate() en lugar de .generateEmbedding()
+      const vector = await embeddingsService.generate(textToEmbed);
 
       vectorRecords.push({
         id: item.id,
