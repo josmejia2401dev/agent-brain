@@ -18,35 +18,47 @@ export class InboxService {
 
     parseFile(filePath) {
         const contentStr = fs.readFileSync(filePath, 'utf-8');
-        
-        // 1. Capturamos todo lo que esté dentro de los backticks de la variable "content:"
-        // [\s\S]*? captura cualquier caracter incluyendo saltos de línea hasta el cierre del backtick
-        const contentMatch = contentStr.match(/content:\s*`([\s\S]*?)`/);
-        const contentValue = contentMatch ? contentMatch[1].trim() : '';
 
-        // 2. Retiramos temporalmente el bloque del content para parsear las llaves simples
-        // de forma segura, evitando que un ':' dentro de tu código rompa la lectura.
-        const textWithoutContent = contentStr.replace(/content:\s*`[\s\S]*?`/, '');
+        // Buscamos la posición exacta donde inicia la propiedad "content:"
+        const contentIdx = contentStr.indexOf('content:');
 
+        let headerText = contentStr;
+        let rawContent = '';
+
+        if (contentIdx !== -1) {
+            headerText = contentStr.slice(0, contentIdx);
+            // Extraemos todo lo que esté después de "content:"
+            rawContent = contentStr.slice(contentIdx + 'content:'.length).trim();
+        }
+
+        // Parsear los metadatos (todo lo que está antes de content:)
         const data = {};
-        textWithoutContent.split('\n').forEach(line => {
+        headerText.split('\n').forEach(line => {
             const separatorIdx = line.indexOf(':');
             if (separatorIdx > 0) {
                 const key = line.slice(0, separatorIdx).trim().toLowerCase();
                 const value = line.slice(separatorIdx + 1).trim();
-                if (key && key !== 'content') {
+                if (key) {
                     data[key] = value;
                 }
             }
         });
 
+        // Limpieza del contenido: remover comillas invertidas únicamente si envuelven el texto
+        let contentValue = rawContent;
+        if (contentValue.startsWith('```') && contentValue.endsWith('```')) {
+            contentValue = contentValue.slice(3, -3).trim();
+        } else if (contentValue.startsWith('`') && contentValue.endsWith('`')) {
+            contentValue = contentValue.slice(1, -1).trim();
+        }
+
         // Validar si logró extraer datos útiles
         if (Object.keys(data).length === 0) return null;
 
-        const standardKeys = ['operation', 'title', 'item_type', 'tech', 'tags'];
+        const standardKeys = ['operation', 'title', 'summary', 'item_type', 'tech', 'tags'];
         const metadata = {};
 
-        // Todo lo adicional va a los metadatos dinámicos
+        // Todo lo adicional va a metadatos dinámicos
         Object.keys(data).forEach(key => {
             if (!standardKeys.includes(key)) {
                 metadata[key] = data[key];
@@ -56,6 +68,7 @@ export class InboxService {
         return {
             operation: (data.operation || 'insert').toLowerCase(),
             title: data.title || 'Sin título',
+            summary: data.summary || '',
             item_type: data.item_type || 'code_snippet',
             tech: data.tech || 'markdown',
             tags: (data.tags || '').split(',').map(t => ({ name: t.trim(), category: 'topic' })).filter(t => t.name),

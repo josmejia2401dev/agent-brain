@@ -32,7 +32,6 @@ export class DatabaseManager {
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
-
       CREATE TABLE IF NOT EXISTS code_ast_metadata (
           item_id TEXT PRIMARY KEY,
           exports JSON,
@@ -42,13 +41,11 @@ export class DatabaseManager {
           dependencies JSON,
           FOREIGN KEY (item_id) REFERENCES knowledge_items(id) ON DELETE CASCADE
       );
-
       CREATE TABLE IF NOT EXISTS tags (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           name TEXT UNIQUE NOT NULL,
           category TEXT CHECK(category IN ('principle', 'technology', 'topic', 'severity')) NOT NULL
       );
-
       CREATE TABLE IF NOT EXISTS item_tags (
           item_id TEXT NOT NULL,
           tag_id INTEGER NOT NULL,
@@ -56,10 +53,20 @@ export class DatabaseManager {
           FOREIGN KEY (item_id) REFERENCES knowledge_items(id) ON DELETE CASCADE,
           FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
       );
-
+      CREATE TABLE IF NOT EXISTS search_feedback (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          query_text TEXT NOT NULL,
+          item_id TEXT NOT NULL,
+          hits INTEGER DEFAULT 1,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(query_text, item_id),
+          FOREIGN KEY (item_id) REFERENCES knowledge_items(id) ON DELETE CASCADE
+      );
       CREATE INDEX IF NOT EXISTS idx_items_type ON knowledge_items(item_type);
       CREATE INDEX IF NOT EXISTS idx_items_status ON knowledge_items(status);
       CREATE INDEX IF NOT EXISTS idx_items_tech ON knowledge_items(language_tech);
+      CREATE INDEX IF NOT EXISTS idx_feedback_query ON search_feedback(query_text);
     `);
   }
 

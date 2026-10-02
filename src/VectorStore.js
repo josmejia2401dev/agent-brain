@@ -17,7 +17,6 @@ export class VectorStoreManager {
   async addVector(record) {
     await this.connect();
     const tables = await this.db.tableNames();
-
     if (!tables.includes(this.tableName)) {
       this.table = await this.db.createTable(this.tableName, [record]);
     } else {
@@ -30,9 +29,7 @@ export class VectorStoreManager {
     await this.connect();
     const tables = await this.db.tableNames();
     if (!tables.includes(this.tableName)) return;
-
     if (!this.table) this.table = await this.db.openTable(this.tableName);
-    // Elimina el vector correspondiente usando el ID como filtro SQL
     await this.table.delete(`id = '${itemId}'`);
   }
 
@@ -40,11 +37,8 @@ export class VectorStoreManager {
     await this.connect();
     const tables = await this.db.tableNames();
     if (!tables.includes(this.tableName)) return [];
-
     if (!this.table) this.table = await this.db.openTable(this.tableName);
     const results = await this.table.search(vector).limit(limit).toArray();
-
-    // Filtra los resultados que superen el umbral razonable para distancia L2 (1.15)
     return results.filter(r => r._distance === undefined || r._distance <= maxDistance);
   }
 
@@ -52,8 +46,6 @@ export class VectorStoreManager {
     if (!vectorRecords || vectorRecords.length === 0) {
       return;
     }
-
-    // mode: 'overwrite' reemplaza la tabla completa con los nuevos vectores limpiando desincronizaciones
     this.table = await this.db.createTable(this.tableName, vectorRecords, {
       mode: 'overwrite'
     });
