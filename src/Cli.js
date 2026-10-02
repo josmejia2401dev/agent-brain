@@ -1,9 +1,10 @@
 import { select, input, editor, confirm } from '@inquirer/prompts';
 
 export class CliApp {
-  constructor(ingestService, searchService) {
+  constructor(ingestService, searchService, inboxService) {
     this.ingestService = ingestService;
     this.searchService = searchService;
+    this.inboxService = inboxService;
   }
 
   printHelp() {
@@ -15,6 +16,8 @@ export class CliApp {
     console.log('  • `/update`    -> Buscar y modificar una nota existente');
     console.log('  • `/delete`    -> Buscar y eliminar una nota de la BD');
     console.log('  • `/index`     -> Re-indexa todas las notas de SQLite hacia la base vectorial (LanceDB)');
+    console.log('  • `/delete`    -> Buscar y eliminar una nota de la BD');
+    console.log('  • `/sync`      -> Sincroniza archivos .md desde .agent_data/inbox/'); // <-- AGREGAR ESTA LÍNEA
     console.log('  • `/help`      -> Mostrar esta ayuda de comandos');
     console.log('  • `/exit`      -> Salir de la aplicación (o escribe `exit`)');
     console.log('======================================================\n');
@@ -205,6 +208,95 @@ export class CliApp {
     }
   }
 
+  async runSyncFlow() {
+    console.log('\n---   SINCRONIZACIÓN POR LOTES (INBOX) ---');
+
+    const files = this.inboxService.getPendingFiles();
+
+    if (files.length === 0) {
+      console.log(`  No hay archivos .md pendientes.\n`);
+      return;
+    }
+
+    console.log(`  Se encontraron ${files.length} archivo(s) para procesar.\n`);
+
+    for (const filePath of files) {
+      const parsedData = this.inboxService.parseFile(filePath);
+
+      if (!parsedData) {
+        // Solo extraemos el nombre para mostrar el error más limpio
+        const fileName = filePath.split(/[\\/]/).pop();
+        console.log(`  [Advertencia] El archivo ${fileName} no tiene un formato válido. Omitiendo.\n`);
+        continue;
+      }
+
+      console.log(`  Procesando: ${parsedData.fileName}...`);
+      // EXTRAEMOS 'metadata' de parsedData
+      const { operation, title, item_type, content, tech, tags, metadata } = parsedData;
+
+      let success = false;
+
+      if (operation === 'insert') {
+        // INYECTAMOS la variable metadata
+        await this.ingestService.ingest({ item_type, title, summary: '', content, language_tech: tech, metadata, tags });
+        console.log(`    Insertado correctamente.`);
+        success = true;
+      } else if (operation === 'update' || operation === 'delete') {
+        const searchResult = await this.searchService.search(title, 10);
+        const matches = searchResult.matches.filter(m => m.title.toLowerCase() === title.toLowerCase());
+
+        if (matches.length === 0) {
+          if (operation === 'delete') {
+            console.log(`    La nota "${title}" ya no existe en BD. Archivo limpiado.`);
+            this.inboxService.deleteFile(filePath);
+          } else {
+            console.log(`    [Advertencia] No se encontró nota con título exacto "${title}" para actualizar. Omitiendo.`);
+          }
+          continue;
+        }
+
+        let targetId = matches[0].id;
+        let selectedItem = matches[0];
+
+        if (matches.length > 1) {
+          console.log(`    Se encontraron múltiples notas con el título "${title}".`);
+          const choice = await select({
+            message: `Selecciona la nota que deseas ${operation.toUpperCase()}:`,
+            choices: matches.map(item => ({ name: `[${item.item_type}] ${item.title} (ID: ${item.id})`, value: item }))
+          });
+          targetId = choice.id;
+          selectedItem = choice;
+        }
+
+        if (operation === 'update') {
+          await this.ingestService.update(targetId, {
+            item_type: item_type || selectedItem.item_type,
+            title: title || selectedItem.title,
+            summary: selectedItem.summary,
+            content: content,
+            language_tech: tech || selectedItem.language_tech,
+            // MEZCLAMOS los metadatos nuevos con los preexistentes
+            metadata: { ...selectedItem.metadata, ...metadata },
+            tags: tags.length > 0 ? tags : selectedItem.tags
+          });
+          console.log(`    Actualizado correctamente.`);
+          success = true;
+        } else if (operation === 'delete') {
+          await this.ingestService.delete(targetId);
+          console.log(`    Eliminado correctamente.`);
+          success = true;
+        }
+      }
+
+      // ELIMINAR el archivo solo si se procesó de forma exitosa
+      if (success) {
+        this.inboxService.deleteFile(filePath);
+      }
+    }
+
+    console.log(`\n  Sincronización completada.\n`);
+  }
+
   async start() {
     // Escuchar evento SIGINT global (Ctrl + C)
     process.on('SIGINT', () => {
@@ -226,8 +318,16 @@ export class CliApp {
         if (trimmed.toLowerCase() === 'exit' || trimmed.toLowerCase() === '/exit') {
           console.log('¡Hasta luego!');
           process.exit(0);
+        } else if (trimmed.toLowerCase() === 'clear' || trimmed.toLowerCase() === 'cls') {
+          // \x1B[2J borra la pantalla completa
+          // \x1B[3J borra el buffer de scrollback (el historial hacia arriba)
+          // \x1B[H mueve el cursor a la posición inicial (arriba a la izquierda)
+          process.stdout.write('\x1B[2J\x1B[3J\x1B[H');
+          console.clear();
         } else if (trimmed === '/index') {
           await this.handleReindexFlow();
+        } else if (trimmed === '/sync') {
+          await this.runSyncFlow();
         } else if (trimmed === '/ingest') {
           await this.runIngestFlow();
         } else if (trimmed === '/update') {

@@ -7,6 +7,7 @@ import { IngestService } from './src/IngestService.js';
 import { SearchService } from './src/SearchService.js';
 import { CliApp } from './src/Cli.js';
 import { RerankerService } from './src/RerankerService.js';
+import { InboxService } from './src/InboxService.js';
 
 async function bootstrap() {
   console.log('🚀 Inicializando servicios locales en .agent_data/...');
@@ -15,6 +16,7 @@ async function bootstrap() {
   const embeddingsService = new EmbeddingsService(CONFIG);
   const vectorStoreManager = new VectorStoreManager(CONFIG);
   const reranker = new RerankerService();
+  const inboxService = new InboxService(CONFIG.inboxDir);
 
   await embeddingsService.init();
   await vectorStoreManager.connect();
@@ -22,7 +24,7 @@ async function bootstrap() {
   const ingestService = new IngestService(dbManager, vectorStoreManager, embeddingsService);
   const searchService = new SearchService(dbManager, vectorStoreManager, embeddingsService, reranker);
 
-  const cli = new CliApp(ingestService, searchService);
+  const cli = new CliApp(ingestService, searchService, inboxService);
   await cli.start();
 }
 

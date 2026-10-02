@@ -66,8 +66,10 @@ export class IngestService {
     await this.vectorStore.addVector({
       id: itemId,
       vector,
-      text: textToEmbed,
-      item_type: data.item_type
+      title: data.title,
+      item_type: data.item_type,
+      language_tech: data.language_tech || '',
+      summary: data.summary || ''
     });
 
     return itemId;
@@ -142,9 +144,12 @@ export class IngestService {
     await this.vectorStore.addVector({
       id: itemId,
       vector,
-      text: textToEmbed,
-      item_type: data.item_type
+      title: data.title,
+      item_type: data.item_type,
+      language_tech: data.language_tech || '',
+      summary: data.summary || ''
     });
+    
   }
 
   // En src/IngestService.js
